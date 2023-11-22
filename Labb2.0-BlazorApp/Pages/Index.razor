@@ -17,28 +17,28 @@
 					<p class="Adress">@sourceStore.Storedress</p>
 				</div>
 				<div>
-					<form method="post" action="@("MoveBook")">
-						<input type="hidden" name="sourceStoreId" value="@sourceStore.StoreId" />
+					
+						<input type="hidden" @bind="sourceStore.StoreId" />
 
-						<select name="title">
+						<select @bind="title">
 							@foreach (var book in dbContext.BookStockInStores1.Where(b => b.StoreId == sourceStore.StoreId))
 							{
-								<option>@book.Title, @book.Stock stycken</option>
+								<option>@book.Title</option>
 							}
 						</select>
 
-						<input type="number" name="quantity" placeholder="Antal" />
+					<input type="number" @bind="selectedqunety" placeholder="Antal" />
 
 						<label for="destinationStoreId">Till butik:</label>
-						<select name="destinationStoreId">
+						<select @bind="slecteddestionStoreId">
 							@foreach (var destinationStore in stores.Where(s => s.StoreId != sourceStore.StoreId))
 							{
 								<option value="@destinationStore.StoreId">@destinationStore.StoreNamn</option>
 							}
 						</select>
 
-						<button type="submit">Flytta</button>
-					</form>
+					<button @onclick="() => MoveBook(sourceStore.StoreId, slecteddestionStoreId,title,selectedqunety) ">Flytta</button>
+					
 				</div>
 			</div>
 		</div>
@@ -51,16 +51,23 @@
 
 
 @code {
-		
-	
+
+
+
+	private string title;
+	private int selectedqunety;
+	private int slecteddestionStoreId;
+
 	
 	public void MoveBook(int sourceStoreId, int destinationStoreId, string title, int quantity)
 		{
-			var sourceBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == sourceStoreId);
+			// var sourceBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == sourceStoreId);
+			var sourceBook = dbContext.Books.FirstOrDefault(b => b.Title == title);
+			var bookstock = dbContext.Inventories.FirstOrDefault(s => s.Isbn == sourceBook.Isbn13 && s.InventoryId == destinationStoreId);
 
-			if (sourceBook != null && sourceBook.Stock >= quantity)
+			if (sourceBook != null && bookstock.Stock >= quantity)
 			{
-				sourceBook.Stock -= quantity;
+				bookstock.Stock -= quantity;
 
 				var destinationBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == destinationStoreId);
 
@@ -80,7 +87,7 @@
 			else
 			{
 				
-				NavigationManager.NavigateTo("/");
+				NavigationManager.NavigateTo("/Eror");
 			}
 		}
 
