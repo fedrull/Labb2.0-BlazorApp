@@ -1,0 +1,101 @@
+﻿@page "/"
+@using Labb2._0_BlazorApp.Models;
+@using Labb2._0_BlazorApp.Data;
+@using Microsoft.AspNetCore.Mvc;
+@using Microsoft.EntityFrameworkCore;
+@inject YourDbContext dbContext 
+@inject NavigationManager NavigationManager
+
+
+<div class="row">
+	@foreach (var sourceStore in stores)
+	{
+		<div class="col-md-4">
+			<div class="card">
+				<div class="card-body">
+					<h5 class="storename">@sourceStore.StoreNamn</h5>
+					<p class="Adress">@sourceStore.Storedress</p>
+				</div>
+				<div>
+					<form method="post" action="@("MoveBook")">
+						<input type="hidden" name="sourceStoreId" value="@sourceStore.StoreId" />
+
+						<select name="title">
+							@foreach (var book in dbContext.BookStockInStores1.Where(b => b.StoreId == sourceStore.StoreId))
+							{
+								<option>@book.Title, @book.Stock stycken</option>
+							}
+						</select>
+
+						<input type="number" name="quantity" placeholder="Antal" />
+
+						<label for="destinationStoreId">Till butik:</label>
+						<select name="destinationStoreId">
+							@foreach (var destinationStore in stores.Where(s => s.StoreId != sourceStore.StoreId))
+							{
+								<option value="@destinationStore.StoreId">@destinationStore.StoreNamn</option>
+							}
+						</select>
+
+						<button type="submit">Flytta</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+</div>
+
+
+
+
+
+
+@code {
+		
+	
+	
+	public void MoveBook(int sourceStoreId, int destinationStoreId, string title, int quantity)
+		{
+			var sourceBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == sourceStoreId);
+
+			if (sourceBook != null && sourceBook.Stock >= quantity)
+			{
+				sourceBook.Stock -= quantity;
+
+				var destinationBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == destinationStoreId);
+
+				if (destinationBook == null)
+				{
+					dbContext.BookStockInStores1.Add(new BookStockInStore1 { Title = title, Stock = quantity, StoreId = destinationStoreId });
+				}
+				else
+				{
+					destinationBook.Stock += quantity;
+				}
+
+				dbContext.SaveChanges();
+
+			NavigationManager.NavigateTo("/");
+			}
+			else
+			{
+				
+				NavigationManager.NavigateTo("/");
+			}
+		}
+
+	private List<Store> stores = new List<Store>();
+
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		stores = await dbContext.Stores.ToListAsync();
+	}
+
+
+
+
+
+}
+
