@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Labb2._0_BlazorApp.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Labb2._0_BlazorApp.Data;
@@ -18,11 +19,23 @@ public partial class YourDbContext : DbContext
 
     public virtual DbSet<Author> Authors { get; set; }
 
+    public bool flyttabok(string Isbn, int FromeStoreID, int ToStoreID, int Quantity)
+    {
+        List<SqlParameter>sqlParam = new List<SqlParameter>();
+        sqlParam.Add(new SqlParameter("@ISBN13", Isbn));
+		sqlParam.Add(new SqlParameter("@NyStoreID", ToStoreID));
+		sqlParam.Add(new SqlParameter("@FromStoreID", FromeStoreID));
+		sqlParam.Add(new SqlParameter("@Coppies", Quantity));
+		int result = Database.ExecuteSqlRaw("dbo.FlyttaBok @ISBN13 ,@NyStoreID ,@FromStoreID ,@Coppies", sqlParam.ToArray());
+        return result > 0;  
+    }
+
+
     public virtual DbSet<Book> Books { get; set; }
 
-    public virtual DbSet<BookStockInStore> BookStockInStores { get; set; }
+    public virtual DbSet<BookStockInStore> BookStockInStore { get; set; }
 
-    public virtual DbSet<BookStockInStore1> BookStockInStores1 { get; set; }
+    //public virtual DbSet<BookStockInStore1> BookStockInStores1 { get; set; }
 
     public virtual DbSet<Customer> Customers { get; set; }
 
@@ -90,21 +103,21 @@ public partial class YourDbContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(255);
         });
 
-        modelBuilder.Entity<BookStockInStore1>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToView("BookStockInStores");
+        //modelBuilder.Entity<BookStockInStore1>(entity =>
+        //{
+        //    entity
+        //        .HasNoKey()
+        //        .ToView("BookStockInStores");
 
-            entity.Property(e => e.Category).HasMaxLength(255);
-            entity.Property(e => e.FirstName).HasMaxLength(255);
-            entity.Property(e => e.Isbn13)
-                .HasMaxLength(20)
-                .HasColumnName("ISBN13");
-            entity.Property(e => e.LastName).HasMaxLength(255);
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
-            entity.Property(e => e.Title).HasMaxLength(255);
-        });
+        //    entity.Property(e => e.Category).HasMaxLength(255);
+        //    entity.Property(e => e.FirstName).HasMaxLength(255);
+        //    entity.Property(e => e.Isbn13)
+        //        .HasMaxLength(20)
+        //        .HasColumnName("ISBN13");
+        //    entity.Property(e => e.LastName).HasMaxLength(255);
+        //    entity.Property(e => e.StoreId).HasColumnName("StoreID");
+        //    entity.Property(e => e.Title).HasMaxLength(255);
+        //});
 
         modelBuilder.Entity<Customer>(entity =>
         {

@@ -18,26 +18,26 @@
 				</div>
 				<div>
 					
-						<input type="hidden" @bind="sourceStore.StoreId" />
+						<input type="hidden" value="@sourceStore.StoreId" />
 
-						<select @bind="title">
-							@foreach (var book in dbContext.BookStockInStores1.Where(b => b.StoreId == sourceStore.StoreId))
+						<select id="Title" @bind="sourceStore.CardModel.Isbn">
+							@foreach (var book in dbContext.BookStockInStore.Where(b => b.StoreId == sourceStore.StoreId))
 							{
-								<option>@book.Title</option>
+							<option value=@book.Isbn13>@book.Title @book.Stock st</option>
 							}
 						</select>
 
-					<input type="number" @bind="selectedqunety" placeholder="Antal" />
+					<input type="number" @bind="sourceStore.CardModel.SelectedQuantity" placeholder="Antal" />
 
 						<label for="destinationStoreId">Till butik:</label>
-						<select @bind="slecteddestionStoreId">
+						<select @bind="sourceStore.CardModel.SelectedDestinationStoreId">
 							@foreach (var destinationStore in stores.Where(s => s.StoreId != sourceStore.StoreId))
 							{
 								<option value="@destinationStore.StoreId">@destinationStore.StoreNamn</option>
 							}
 						</select>
 
-					<button @onclick="() => MoveBook(sourceStore.StoreId, slecteddestionStoreId,title,selectedqunety) ">Flytta</button>
+					<button @onclick="() => MoveBook(sourceStore.StoreId, sourceStore.CardModel) ">Flytta</button>
 					
 				</div>
 			</div>
@@ -58,38 +58,40 @@
 	private int selectedqunety;
 	private int slecteddestionStoreId;
 
-	
-	public void MoveBook(int sourceStoreId, int destinationStoreId, string title, int quantity)
+
+	public void MoveBook(int sourceStoreId, StoreCardModel cardmodel)
+	{
+		// var sourceBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == sourceStoreId);
+		var sourceBook = dbContext.Books.FirstOrDefault(b => b.Isbn13 == cardmodel.Isbn);
+		var bookstock = dbContext.Inventories.FirstOrDefault(i => i.Isbn == sourceBook.Isbn13 && i.InventoryId == sourceStoreId);
+
+		if (sourceBook != null && bookstock.Stock >= cardmodel.SelectedQuantity)
 		{
-			// var sourceBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == sourceStoreId);
-			var sourceBook = dbContext.Books.FirstOrDefault(b => b.Title == title);
-			var bookstock = dbContext.Inventories.FirstOrDefault(s => s.Isbn == sourceBook.Isbn13 && s.InventoryId == destinationStoreId);
+			// bookstock.Stock -= cardmodel.SelectedQuantity;
 
-			if (sourceBook != null && bookstock.Stock >= quantity)
-			{
-				bookstock.Stock -= quantity;
+			// var destinationBook = dbContext.FirstOrDefault(b => b.Isbn13 == cardmodel.Isbn && b.StoreId == cardmodel.SelectedDestinationStoreId);
 
-				var destinationBook = dbContext.BookStockInStores1.FirstOrDefault(b => b.Title == title && b.StoreId == destinationStoreId);
+			// if (destinationBook == null)
+			// {
+			// 	dbContext.BookStockInStore.Add(new BookStockInStore { Isbn13 = cardmodel.Isbn, Stock = cardmodel.SelectedQuantity, StoreId = cardmodel.SelectedDestinationStoreId });
+			// }
+			// else
+			// {
+			// 	destinationBook.Stock += cardmodel.SelectedQuantity;
+			// }
 
-				if (destinationBook == null)
-				{
-					dbContext.BookStockInStores1.Add(new BookStockInStore1 { Title = title, Stock = quantity, StoreId = destinationStoreId });
-				}
-				else
-				{
-					destinationBook.Stock += quantity;
-				}
+			dbContext.flyttabok(sourceBook.Isbn13, sourceStoreId, cardmodel.SelectedDestinationStoreId, cardmodel.SelectedQuantity);
 
-				dbContext.SaveChanges();
+			dbContext.SaveChanges();
 
 			NavigationManager.NavigateTo("/");
-			}
-			else
-			{
-				
-				NavigationManager.NavigateTo("/Eror");
-			}
 		}
+		else
+		{
+
+			NavigationManager.NavigateTo("/Eror");
+		}
+	}
 
 	private List<Store> stores = new List<Store>();
 
@@ -98,10 +100,11 @@
 	protected override async Task OnInitializedAsync()
 	{
 		stores = await dbContext.Stores.ToListAsync();
+		foreach(var store in stores)
+		{
+			store.CardModel = new StoreCardModel();
+		}
 	}
-
-
-
 
 
 }
