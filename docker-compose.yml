@@ -1,0 +1,29 @@
+version: '3.4'
+
+services:
+  labb2.0-blazorapp:
+    build:
+      context: .
+      dockerfile: Labb2.0-BlazorApp/Dockerfile
+    ports:
+       - "8080:8080"
+       - "8081:8081" 
+    depends_on:
+       - labb20-blazorapp-sqlcon-1
+    networks:
+       -  mynetwork
+  labb20-blazorapp-sqlcon-1:
+    image: mcr.microsoft.com/mssql/server:latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Password123!"
+    ports:
+      - "1433:1433" 
+    networks:
+      - mynetwork  
+networks:
+  mynetwork:
+
+
+
+  
